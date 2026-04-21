@@ -5,18 +5,19 @@ This course surveys data science tools and frameworks that are currently used in
 1. Organize all the course-related content, such as in-calss practices, homeworks, and final project. <br /> 
 2. Develop and organize final project, open access to other related people.
 ## Project Guideline
-├── multi-omics/
-│   ├── T1 dataset
-│   ├── T2 dataset
-│   ├── ADC dataset
-│   └── post-hoc dataset
-│
-├── code/
-│   ├── EDA.ipynb
-│   ├── supervised_baselines.ipynb
-│   ├── adaptive_gated_fusion.ipynb
-│   └── unsupervised_clustering.ipynb
-│
-└── README.md
-1. The original data for the final project are in the multi-omics folder with 4 primary dataset, each corresponding to T1, T2, ADC-driven features and post-hoc dataset. The train and test after split dataset are not uploaded as if you run the code in EDA, it will automatically generated for you. 
-2. The step by step code development of project can be found in the code folder with 4 jupyter notebooks, each corresponbding to EDA, supervised baseline models, supervised adaptive gated fusion network, and unsupervised cluster learning that contain detailed information of the models and model performance. All the functions and models in the notebook are carefully set seed to be determinictics but you can still run some code chunk isolated to get different randomizaed results.
+This project investigates the preoperative prediction of lymphovascular space invasion (LVSI) in endometrial cancer using multi-modal MRI-based radiomics features (T1, T2, and ADC).
+
+Both supervised learning (baseline models and adaptive fusion networks) and unsupervised learning (clustering and stability analysis) are employed to evaluate predictive performance and uncover intrinsic data structure.
+
+### Dataset
+The original data for the final project are located in the multi-omics folder, which contains four primary datasets corresponding to T1-, T2-, ADC-derived features, as well as the post-hoc dataset. Separate train/test split files are not provided, as these datasets can be generated automatically by running the code in the Explanatory_Data_Analysis.ipynb notebook.
+
+### Code Notebook
+The project’s step-by-step code development is provided in the code folder, which contains four Jupyter notebooks covering:
+
+1. Exploratory data analysis (EDA)
+2. Supervised baseline models
+3. Supervised adaptive gated fusion networks (progressive development)
+4. Unsupervised clustering analysis
+
+Each notebook includes detailed implementation of the corresponding methods and summaries of model performance. Most functions and models are run with fixed random seeds to ensure reproducibility. Nevertheless, if certain code blocks are executed independently, slight variations in randomized results may still occur.
