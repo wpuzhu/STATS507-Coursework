@@ -28,9 +28,10 @@ Each script caches its result in `results/unsupervised_extension/cache/`
 | `03_clustering.py` | k-means on MOFA factor scores, k = 2..8; silhouette, subsampling ARI (B = 200), consensus matrix and PAC; composite choice of k; robustness to algorithm and harmonization | `tables/cluster_*`; `figures/cluster_*`, `consensus_matrices` | III-E, IV-D, IV-E |
 | `04_posthoc.py` | 21 clinical / imaging-report / pathology variables vs clusters: Kruskal-Wallis / chi-squared, batch-adjusted LRT, within-center-1 tests, BH-FDR; retention rule; explanatory multinomial models | `tables/posthoc_*`; `figures/posthoc_*` | III-F, IV-F |
 | `05_data_integrity.py` | Cross-file consistency (tumor volume across sequences, radiomic vs radiologist measurements) | `tables/data_integrity.csv` | IV-A |
-| `06_latex_tables.py` | Writes the booktabs tables used by the report and copies figures to `report/figures/` | `report/Unsupervised_Extension/tables/*.tex` | all |
+| `06_latex_tables.py` | Writes the booktabs tables used by the report | `report/tables/*.tex` | all |
 
-`common.py` holds shared paths, plotting style and helpers.
+`common.py` holds shared paths, plotting style and helpers. Figures used by the
+report are copied to `report/figures/` by `code/sync_report_figures.py`.
 
 ## Key settings
 

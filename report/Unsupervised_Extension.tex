@@ -138,7 +138,7 @@ A variable was \emph{retained} if it reached $q<0.05$ both unadjusted and batch-
 
 Table~\ref{tab:ue-integrity} reports cross-file consistency checks. For the same patient, segmented tumor volume agreed between sequences in C2a (Spearman $\rho\approx0.76$) but only weakly in C1 ($\rho\approx0.25$) and not at all in C2b ($\rho\approx0$). In no batch did radiomic volume track the radiologist-measured maximum diameter, or whole-tumor mean ADC track the radiologist ADC value. Rows are also ordered by LVI within each center, and the 30 LVI-positive center-2 patients occupy a contiguous block of case identifiers (58--87). These patterns are consistent with records that are not linked to the same patient across the T1, T2, ADC and post-hoc tables, or with different regions of interest, in parts of the cohort. All results below are conditional on the linkage as provided.
 
-\input{Unsupervised_Extension/tables/integrity_table}
+\input{tables/integrity_table}
 
 \subsection{Center Harmonization}
 
@@ -149,7 +149,7 @@ Table~\ref{tab:ue-integrity} reports cross-file consistency checks. For the same
 \label{fig:ue-harm-pca}
 \end{figure*}
 
-\input{Unsupervised_Extension/tables/harmonization_table}
+\input{tables/harmonization_table}
 
 Without correction, batch explained 32--37\% of the multivariate variance within each sequence (PERMANOVA $R^2$; 35\% for the concatenated features), and 91--97\% of features differed in location between batches (Table~\ref{tab:ue-harm}, Figs.~\ref{fig:ue-harm-pca} and~\ref{fig:ue-harm-mv}). ComBat by hospital center removed the center difference by construction, but left 13--16\% of the variance explained by batch and 79--85\% of features batch-associated, because center~2 contains two technically distinct batches. ComBat by acquisition batch reduced the batch $R^2$ to below 0.001 ($p=1.0$), the batch silhouette from 0.29 to $-0.02$, and the share of location-associated features to 5--11\%.
 
@@ -190,7 +190,7 @@ On the primary harmonized data, MOFA retained eight factors that explained 46\%,
 \label{fig:ue-k}
 \end{figure*}
 
-\input{Unsupervised_Extension/tables/k_selection_table}
+\input{tables/k_selection_table}
 
 Table~\ref{tab:ue-k} and Fig.~\ref{fig:ue-k} summarize the internal validation. Silhouette widths were low for every $k$ (0.22--0.24), indicating weak separation. The partitions with $k\ge4$ isolated a cluster of fewer than 10\% of patients (for $k=4$, 37 patients, 35 of them LVI-positive). This cluster is the contiguous center-2 LVI-positive block plus a few center-1 patients, so its strong LVI association (Cram\'er's $V\approx0.57$) reflects the extraction-block structure rather than an imaging phenotype. The composite criterion selected $k=3$, with mean subsample ARI $0.74\pm0.23$, pairwise ARI 0.59, PAC 0.50, and cluster sizes 260/79/64.
 
@@ -210,8 +210,8 @@ Consensus matrices (Fig.~\ref{fig:ue-cons}) show a clear two-way split between c
 \label{fig:ue-tsne}
 \end{figure*}
 
-\input{Unsupervised_Extension/tables/cluster_batch_table}
-\input{Unsupervised_Extension/tables/robustness_table}
+\input{tables/cluster_batch_table}
+\input{tables/robustness_table}
 
 \subsection{Radiomic Characterization}
 
@@ -219,13 +219,13 @@ The clusters were separated mainly by factor~4 ($\epsilon^2=0.38$; T2 grey-level
 
 \subsection{Post-hoc Analysis}
 
-\input{Unsupervised_Extension/tables/posthoc_table}
+\input{tables/posthoc_table}
 
 No post-hoc variable met the retention rule (Table~\ref{tab:ue-posthoc}, Fig.~\ref{fig:ue-posthoc}). The only candidate with a non-negligible effect was the radiologist-measured ADC value. It was lower in cluster~1 (median 0.75 vs.\ 0.83 and 0.82 $\times10^{-3}\,$mm$^2$/s; $\epsilon^2=0.045$, $q=0.001$), and the difference persisted after batch adjustment (nominal $p=0.015$, $q=0.15$) and within center~1 ($p=0.003$). LVI was associated with cluster only after batch adjustment ($q=0.003$). This association came entirely from C2a, where all 30 LVI-positive patients fell in cluster~1, and was absent within center~1 ($p=0.38$), so we regard it as an artifact of the center-2 extraction blocks. Ki-67 and ER had nominal batch-adjusted $p<0.05$, but negligible effects ($\epsilon^2<0.01$).
 
 In explaining cluster membership, all 21 variables together barely exceeded chance (cross-validated macro-AUC 0.55), ADC alone reached 0.62, and batch alone reached 0.68 (Table~\ref{tab:ue-models}). For the center-1 clusters, DWI hyperintensity (98\% vs.\ 90\%), the late-arterial enhancement ratio and Ki-67 were nominally associated ($p<0.02$, $q\approx0.10$), with a joint cross-validated AUC of 0.66.
 
-\input{Unsupervised_Extension/tables/posthoc_models_table}
+\input{tables/posthoc_models_table}
 
 \begin{figure}[t]
 \centering

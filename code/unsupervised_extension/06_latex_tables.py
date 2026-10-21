@@ -1,16 +1,11 @@
-"""Step 6: write booktabs LaTeX tables and copy figures for the report."""
-
-import shutil
+"""Step 6: write the booktabs LaTeX tables used by the report."""
 
 import pandas as pd
 
-from common import FIG, ROOT, TAB
+from common import ROOT, TAB
 
-REPORT = ROOT / "report" / "Unsupervised_Extension"
-RT = REPORT / "tables"
-RF = ROOT / "report" / "figures"  # shared figures folder, as on Overleaf
+RT = ROOT / "report" / "tables"
 RT.mkdir(parents=True, exist_ok=True)
-RF.mkdir(parents=True, exist_ok=True)
 
 
 def esc(s):
@@ -160,8 +155,6 @@ def main():
           "(multinomial logistic regression, 10$\\times$5-fold CV macro-AUC).",
           "tab:ue-models", "llrr", size=r"\scriptsize", fit=True)
 
-    for f in FIG.glob("*.pdf"):
-        shutil.copy(f, RF / f.name)
     print("tables:", sorted(x.name for x in RT.iterdir()))
 
 
