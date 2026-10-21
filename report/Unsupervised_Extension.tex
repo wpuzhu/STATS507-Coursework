@@ -1,220 +1,259 @@
-\documentclass{article}
-\usepackage{graphicx} % Required for inserting images
-\usepackage{subcaption}
-\usepackage[authoryear]{natbib}
-\usepackage{amsmath}
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
 \usepackage{booktabs}
-
-\title{Multi-modal MRI for Identifying Lymphovascular Invasion in Endometrial Cancer}
-\author{Puzhu Wang}
-\date{March 2026}
-
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
+
+\title{Multi-modal MRI for Identifying Lymphovascular Invasion in Endometrial Cancer: Center Harmonization, Latent Representation and Clustering\\}
+
+\author{
+\IEEEauthorblockN{Puzhu Wang}
+\IEEEauthorblockA{
+\textit{LSA Statistics Department} \\
+\textit{University of Michigan} \\
+Ann Arbor, USA \\
+puzhu@umich.edu
+}
+}
 
 \maketitle
 
-\subsection{Literature Review}
-\label{sec:harmonization-integration}
+\begin{abstract}
+Unsupervised analysis of multicenter radiomic data can reveal tumor phenotypes, but it can equally recover technical differences between imaging centers. We analyze T1-, T2- and ADC-derived radiomic features of 403 endometrial-cancer patients from two centers with a pipeline that combines center harmonization, a multi-view latent representation and stability-based clustering, followed by post-hoc characterization with clinical, imaging-report and pathology variables. We find that center~2 consists of two technically distinct acquisition batches, one of which contains no patient with lymphovascular invasion (LVI). ComBat harmonization by hospital center leaves most of the batch structure in place, whereas ComBat by acquisition batch removes the location and scale batch effects (batch PERMANOVA $R^2$ from 0.35 to below 0.001), although differences in the covariance structure remain. Multi-Omics Factor Analysis (MOFA+) of the harmonized data yields eight factors that explain 45--48\% of the variance of each sequence. $k$-means clustering of the factor scores, with $k$ selected from the silhouette width, subsampling stability (adjusted Rand index) and consensus clustering (proportion of ambiguous clustering), gives a weak and only moderately stable three-cluster partition (silhouette 0.23, ARI 0.74, PAC 0.50) that still partly reflects acquisition batch. No clinical or pathological variable robustly explains the clusters; the only consistent association is a lower radiologist-measured ADC value in one cluster. Cross-file consistency checks further suggest that patient linkage should be verified. These results show how batch structure and its confounding with the outcome can dominate unsupervised radiomic analyses, and they motivate harmonization on recorded acquisition metadata and external validation.
+\end{abstract}
 
-Radiomics provides a quantitative characterization of tumor phenotype through
-high-dimensional features describing intensity, shape, texture, and spatial
-heterogeneity. In multi-sequence magnetic resonance imaging (MRI), the imaging
-sequences offer related but nonredundant descriptions of the same tumor. T1-
-and T2-weighted images characterize different aspects of anatomy and tissue
-composition, whereas apparent diffusion coefficient (ADC) images quantify
-water diffusion and may provide information related to tumor cellularity.
-Joint analysis of these complementary measurements can therefore provide a
-more complete description of tumor heterogeneity than separate analyses of
-the individual sequences. More broadly, the multi-view and multi-omics
-literature has shown that integrating complementary data sources can reveal
-coordinated sources of variation, facilitate patient stratification, and
-support biomarker discovery \citep{subramanian2020multiomics,
-vahabi2022unsupervised}.
+\section{Introduction}
 
-A central challenge in multicenter radiomic analysis is that extracted
-features reflect technical as well as biological variation. Scanner
-manufacturer, magnetic-field strength, acquisition and reconstruction
-parameters, voxel size, segmentation procedures, and intensity preprocessing
-can affect feature distributions and reproducibility
-\citep{mali2021radiomics}. Consequently, directly pooling radiomic features
-across centers can introduce systematic location and scale differences. When
-these technical effects are large, unsupervised dimension reduction and
-clustering may primarily distinguish imaging centers rather than clinically
-meaningful tumor phenotypes. Multisite MRI studies have similarly demonstrated
-that scanner effects can dominate major directions of variation and reduce the
-reproducibility of downstream analyses \citep{fortin2018cortical}.
+Lymphovascular invasion (LVI) is a major prognostic factor in endometrial cancer and enters the risk groups that determine the extent of lymph-node staging and the indication for adjuvant therapy \cite{concin2021esgo}. Because LVI is a microscopic feature that can only be confirmed on the surgical specimen, there is interest in whether quantitative features extracted from preoperative MRI carry indirect information about it \cite{luo2020multiparametric,long2021mri,liu2024multimodal,ma2025predictive}. Our companion Supervised Report studies LVI prediction directly. Here we take an unsupervised view and ask whether the multi-sequence radiomic data contain stable patient subgroups, and whether such subgroups correspond to clinical or pathological characteristics.
 
-ComBat was originally introduced as an empirical Bayes method for correcting
-batch effects in high-dimensional genomic data \citep{johnson2007combat}. For
-each feature, it estimates batch-specific additive and multiplicative effects
-while borrowing information across features to stabilize estimation. ComBat
-was subsequently adapted to medical imaging and radiomics.
-For example, \citet{orlhac2018postreconstruction} reported that ComBat reduced
-center-associated differences in PET radiomic features while retaining
-patient-specific variation, and \citet{fortin2018cortical} demonstrated the
-removal of scanner-associated location and scale effects in multicenter MRI.
-Subsequent studies further showed that ComBat and its extensions can improve
-radiomic-feature comparability and support the development of more
-reproducible multicenter models
-\citep{daano2020combat,masson2021harmonization}.
+Two obstacles make this question difficult. First, the data come from two centers, and radiomic features are sensitive to scanner, protocol and extraction settings, so an unsupervised method may recover imaging centers rather than tumor phenotypes \cite{mali2021radiomics,fortin2018cortical}. Second, the T1, T2 and ADC sequences provide related but nonredundant high-dimensional descriptions of the same tumor, which calls for a representation that distinguishes variation shared across sequences from variation specific to one of them.
 
-Harmonization alone, however, does not integrate information across MRI
-sequences. After center correction, the T1, T2, and ADC measurements remain
-separate high-dimensional feature matrices. Direct feature concatenation is a
-simple integration strategy, but it can allow a modality with more features or
-greater residual variance to dominate the analysis. It also does not explicitly
-distinguish variation shared across modalities from variation specific to one
-modality. These limitations motivate structured latent-variable methods for
-multimodal integration.
+We address these obstacles with a sequential pipeline: center harmonization with ComBat and its extensions, evaluated with explicit tests; a multi-view latent representation with MOFA+; clustering of the latent factor scores with the number of clusters chosen by internal validation and resampling stability; and post-hoc characterization of the clusters. Our main contributions are (i) the detection of two hidden acquisition batches within one center, one of which is confounded with the outcome; (ii) a systematic comparison of harmonization strategies at the feature, latent-factor and cluster level; and (iii) a stability-based clustering and post-hoc analysis that separates technical from clinically interpretable structure.
 
-Integrative clustering methods identify sample subgroups by jointly analyzing
-multiple high-dimensional modalities. A recent review by
-\citet{li2026integrative} organizes these methods into approaches based on
-shared latent representations, probabilistic dependence among
-modality-specific clusterings, and fusion of sample-similarity structures. One
-widely used strategy is to first estimate a low-dimensional representation
-shared across modalities and then cluster the estimated scores. The iCluster
-framework introduced a joint latent-variable model linking multiple genomic
-data types through common sample-level factors \citep{shen2009icluster}.
-Extensions incorporated heterogeneous outcome distributions and sparse feature
-selection \citep{mo2013pattern}, as well as fully Bayesian inference
-\citep{mo2018bayesian}. Similarly, Joint and Individual Variation Explained
-(JIVE) decomposes linked datasets into joint structure, modality-specific
-structure, and residual noise \citep{lock2013jive}; clustering the joint and
-individual components can reveal shared and modality-specific subgroups,
-respectively \citep{hellton2016integrative}.
+\section{Literature Review}
 
-A second family of methods estimates related but potentially distinct
-clusterings for the individual modalities. Bayesian correlated clustering
-models dependence between modality-specific cluster memberships
-\citep{kirk2012bayesian}, whereas Bayesian consensus clustering shrinks the
-modality-specific partitions toward an overall sample partition
-\citep{lock2013consensus}. Clusternomics permits more heterogeneous
-cross-modality structure by modeling both local and global clusters with a
-hierarchical Dirichlet mixture model \citep{gabasova2017clusternomics}. A third
-family integrates sample similarities rather than the original features.
-Similarity Network Fusion constructs a sample-similarity network for each
-modality and iteratively combines the networks before clustering
-\citep{wang2014snf}. Such similarity-based approaches can accommodate
-modality-specific distance measures and nonlinear neighborhood structure.
+\subsection{Radiomics and Center Harmonization}
 
-Among shared-latent-representation approaches, Multi-Omics Factor Analysis
-(MOFA) provides a general probabilistic multi-view factor model. Although it
-was originally developed for multi-omics data, its formulation is applicable
-to other aligned, high-dimensional modalities, including radiomic feature
-sets. For modality $m$, the model can be summarized as
+Radiomics provides a quantitative characterization of tumor phenotype through high-dimensional features describing intensity, shape, texture, and spatial heterogeneity \cite{gillies2016radiomics}. In multi-sequence MRI, the imaging sequences offer related but nonredundant descriptions of the same tumor. T1- and T2-weighted images characterize different aspects of anatomy and tissue composition, whereas apparent diffusion coefficient (ADC) images quantify water diffusion and may provide information related to tumor cellularity. Joint analysis of these complementary measurements can therefore provide a more complete description of tumor heterogeneity than separate analyses of the individual sequences \cite{subramanian2020multiomics,vahabi2022unsupervised}.
+
+A central challenge in multicenter radiomic analysis is that extracted features reflect technical as well as biological variation. Scanner manufacturer, magnetic-field strength, acquisition and reconstruction parameters, voxel size, segmentation procedures, and intensity preprocessing can affect feature distributions and reproducibility \cite{mali2021radiomics,zwanenburg2020ibsi}. Consequently, directly pooling radiomic features across centers can introduce systematic location and scale differences. When these technical effects are large, unsupervised dimension reduction and clustering may primarily distinguish imaging centers rather than clinically meaningful tumor phenotypes; multisite MRI studies have similarly shown that scanner effects can dominate the major directions of variation \cite{fortin2018cortical,leek2010tackling}.
+
+ComBat was originally introduced as an empirical Bayes method for correcting batch effects in high-dimensional genomic data \cite{johnson2007combat}. It models each feature as
 \begin{equation}
-    \mathbf{X}^{(m)} = \mathbf{Z}\mathbf{W}^{(m)\mathsf{T}}
-    + \mathbf{E}^{(m)},
+    x_{ij} = \alpha_j + \mathbf{c}_i^{\mathsf T}\boldsymbol\beta_j + \gamma_{gj} + \delta_{gj}\varepsilon_{ij},
 \end{equation}
-where $\mathbf{Z}$ contains patient-level factor scores,
-$\mathbf{W}^{(m)}$ contains modality-specific feature weights, and
-$\mathbf{E}^{(m)}$ contains residual variation. Sparsity-inducing and automatic
-relevance determination priors allow a factor to explain variation shared by
-several modalities or variation concentrated in a single modality
-\citep{argelaguet2018mofa}. MOFA+ extends this framework with more scalable
-variational inference and group-wise regularization for jointly modeling
-multiple groups or experimental conditions \citep{argelaguet2020mofaplus}.
-It can also accommodate partially overlapping sample sets and missing
-observations; nevertheless, reliable cross-modal integration requires aligned
-sample identities or sufficient overlap to connect the modalities.
+where $\alpha_j$ is the overall mean of feature $j$, $\mathbf{c}_i$ are optional covariates to be protected, and $\gamma_{gj}$ and $\delta_{gj}$ are the additive and multiplicative effects of batch $g$, estimated by empirical Bayes while borrowing strength across features. ComBat was subsequently adapted to diffusion and structural MRI \cite{fortin2017dti,fortin2018cortical} and to PET and CT radiomics, where it reduced center-associated differences while retaining patient-specific variation and supported more reproducible multicenter models \cite{orlhac2018postreconstruction,daano2020combat,masson2021harmonization}. Practical guidance stresses that the batch must be the acquisition setting that actually generates the technical shift, not merely the hospital, and that harmonization should be checked feature by feature and on the joint distribution \cite{orlhac2022guide}.
 
-Taken together, this literature distinguishes two complementary statistical
-objectives. Harmonization methods such as ComBat target known technical
-variation across acquisition environments, whereas multi-view factor models
-such as MOFA characterize covariance shared across or specific to different
-modalities. Their sequential use may reduce the influence of technical effects
-on the learned representation while retaining the interpretability of latent
-factors and modality-specific feature weights. However, neither harmonization
-nor latent-factor estimation guarantees biological validity. Center may be
-confounded with patient composition, harmonization may attenuate meaningful
-variation, and factors explaining substantial variance need not be clinically
-relevant. These limitations motivate explicit evaluation of technical-effect
-removal and the stability of the resulting factors and clusters.
+Two limitations of ComBat are central to this work. First, it aligns only the first two moments of each feature. CovBat additionally harmonizes the between-feature covariance \cite{chen2022covbat}, and generalized or nested ComBat handles multimodal feature distributions and several overlapping batch effects, including batches that are not known in advance \cite{horng2022generalized}. Second, when batch is confounded with the biological variable of interest, protecting that variable in the ComBat model re-injects group differences and inflates downstream significance \cite{nygaard2016methods}. The single-cell literature makes the same point for normalization: technical scale factors are not identifiable from biology without design assumptions, and normalization choices can create or erase apparent structure \cite{vallejos2017normalizing}.
 
+\subsection{Latent Representation Learning}
 
-\section{Methods}
-\subsection{Methods: Harmonization and Multimodal Integration}
-\label{sec:multimodal-methods}
+Harmonization alone does not integrate information across MRI sequences. After center correction, the T1, T2, and ADC measurements remain separate high-dimensional feature matrices. Direct feature concatenation is a simple integration strategy, but it can allow a modality with more features or greater residual variance to dominate the analysis, and it does not distinguish variation shared across modalities from variation specific to one modality. These limitations motivate structured latent-variable methods for multimodal integration \cite{li2026integrative}.
 
-\subsubsection{Data organization and preprocessing}
+The iCluster framework introduced a joint latent-variable model linking multiple genomic data types through common sample-level factors \cite{shen2009icluster}. Extensions incorporated heterogeneous outcome distributions and sparse feature selection \cite{mo2013pattern}, as well as fully Bayesian inference \cite{mo2018bayesian}. Similarly, Joint and Individual Variation Explained (JIVE) decomposes linked datasets into joint structure, modality-specific structure, and residual noise \cite{lock2013jive}; clustering the joint and individual components can reveal shared and modality-specific subgroups, respectively \cite{hellton2016integrative}.
 
-The dataset used in this study was collected by the Affiliated Hospital of Nanjing University of Chinese Medicine from two clinical centers over a specified period, with appropriate patient consent and authorization for public use. The original MRI signals were preprocessed following a multiparametric MRI-based radiomics pipeline \citep{cao2024multiparameter}, implemented by one of the original contributors, Jingya Chen, who is in the Department of Radiology at the Affiliated Hospital of Nanjing University of Chinese Medicine.
-
-Radiomic features were extracted from the T1-, T2-, and ADC-weighted MRI sequences and organized as three patient-by-feature matrices. Patient identifiers were aligned across modalities so that corresponding rows referred
-to the same patient. Features with unusable or missing measurements were handled before model fitting, and the same feature definitions and ordering were retained across imaging centers. All preprocessing was performed separately by modality to preserve the multi-view structure of the data.
-
-\subsubsection{Center-effect assessment and ComBat harmonization}
-
-Before multimodal integration, center effects were evaluated within each MRI
-modality. For each radiomic feature, its association with imaging center was
-examined, and multiplicity was controlled using false-discovery-rate
-adjustment. The number and proportion of center-associated features and the
-corresponding effect sizes were summarized for T1, T2, and ADC. Low-dimensional
-visualizations colored by center were also inspected to assess multivariate
-separation between centers.
-
-ComBat harmonization was then performed separately on the T1, T2, and ADC
-feature matrices, using imaging center as the batch variable
-\citep{johnson2007combat,orlhac2018postreconstruction}. In its location--scale
-form, the observed value of feature $j$ for patient $i$ from center $g$ was
-modeled as
+Multi-Omics Factor Analysis (MOFA) provides a general probabilistic multi-view factor model. Although it was originally developed for multi-omics data, its formulation is applicable to other aligned, high-dimensional modalities, including radiomic feature sets. For modality $m$, the model can be summarized as
 \begin{equation}
-    x_{ij} = \alpha_j + \gamma_{gj} + \delta_{gj}\epsilon_{ij},
+    \mathbf{X}^{(m)} = \mathbf{Z}\mathbf{W}^{(m)\mathsf{T}} + \mathbf{E}^{(m)},
 \end{equation}
-where $\alpha_j$ denotes the overall feature mean and $\gamma_{gj}$ and
-$\delta_{gj}$ denote center-specific additive and multiplicative effects. The
-empirical Bayes estimates of $\gamma_{gj}$ and $\delta_{gj}$ were removed to
-obtain harmonized features. Harmonization was conducted independently for each
-MRI sequence because the feature distributions and acquisition effects could
-differ across modalities. After harmonization, features were standardized
-within modality before MOFA fitting. Accordingly, additional view scaling was
-disabled in MOFA (\texttt{scale\_views = False}).
+where $\mathbf{Z}$ contains patient-level factor scores, $\mathbf{W}^{(m)}$ contains modality-specific feature weights, and $\mathbf{E}^{(m)}$ contains residual variation. Sparsity-inducing and automatic relevance determination priors allow a factor to explain variation shared by several modalities or variation concentrated in a single modality \cite{argelaguet2018mofa}. MOFA+ extends this framework with more scalable variational inference and group-wise regularization \cite{argelaguet2020mofaplus}. It can also accommodate partially overlapping sample sets and missing observations; nevertheless, reliable cross-modal integration requires aligned sample identities.
 
-The effectiveness of harmonization was assessed by repeating the feature-wise
-and multivariate center-effect analyses. A successful correction was expected
-to reduce center-associated effect sizes and center predictability.
+Reviews of high-dimensional single-cell data summarize the broader toolbox: linear projections such as PCA and factor analysis for representation, and neighbor embeddings such as t-SNE and UMAP for visualization only, because their distances are not globally meaningful \cite{wu2020tools,zogopoulos2025scrnaseq,vandermaaten2008tsne}. Deep generative models such as the variational autoencoder learn nonlinear latent spaces \cite{kingma2014vae}; the deep count autoencoder replaces the Gaussian decoder with a likelihood matched to the data \cite{eraslan2019dca}, and likelihood-free VAEs use a proper scoring rule, the energy score, to avoid decoder misspecification \cite{xu2025envae}. Deep clustering methods such as ClusterGAN and Variational Deep Embedding \cite{mukherjee2019clustergan,jiang2016variational} and multi-view clustering in latent embedding spaces \cite{chen2020multi} follow the same idea. With about 400 patients and 1{,}100 correlated features, we preferred the linear, interpretable MOFA model, whose factors can be traced back to radiomic features.
 
-\subsubsection{MOFA integration}
+\subsection{Integrative Clustering and Cluster Validation}
 
-The harmonized T1, T2, and ADC matrices were integrated with MOFA+ using the
-\texttt{mofapy2} implementation \citep{argelaguet2018mofa,
-argelaguet2020mofaplus}. All patients were treated as a single analysis group
-in the primary harmonized analysis, while the three MRI sequences were
-specified as separate views. For modality $m$, MOFA used the probabilistic
-factor model
-\begin{equation}
-    \mathbf{X}^{(m)} = \mathbf{Z}\mathbf{W}^{(m)\mathsf{T}}
-    + \mathbf{E}^{(m)},
-\end{equation}
-where $\mathbf{Z}$ is the common patient-by-factor score matrix,
-$\mathbf{W}^{(m)}$ is the modality-specific feature-loading matrix, and
-$\mathbf{E}^{(m)}$ is residual variation. Ten initial factors were specified.
-Spike-and-slab sparsity and automatic relevance determination were enabled for
-the weights so that factors unsupported by a modality, or by the data more
-generally, could be shrunk toward inactivity. The model was trained for a
-maximum of 1,000 iterations with medium convergence criteria, a variance-
-explained factor-dropping threshold of 0.01, and random seed 507. GPU training
-was not used.
+Integrative clustering methods identify sample subgroups by jointly analyzing multiple high-dimensional modalities \cite{li2026integrative}. One widely used strategy, adopted here, is to estimate a low-dimensional representation shared across modalities and then cluster the estimated scores \cite{shen2009icluster,hellton2016integrative}. A second family estimates related but potentially distinct clusterings for the individual modalities: Bayesian correlated clustering models dependence between modality-specific cluster memberships \cite{kirk2012bayesian}, Bayesian consensus clustering shrinks the modality-specific partitions toward an overall partition \cite{lock2013consensus}, and Clusternomics models both local and global clusters with a hierarchical Dirichlet mixture \cite{gabasova2017clusternomics}. A third family integrates sample similarities rather than features, as in Similarity Network Fusion \cite{wang2014snf}. Toolkits such as MOVICS run several integrative algorithms and combine them by consensus \cite{lu2020movics}; applied to multiparametric breast MRI radiomics, this approach defined subgroups that differed in receptor status, tumor size and nodal metastasis \cite{he2024integrative}, which is the closest analogue to this work.
 
-Factors retained for downstream analysis were evaluated using their total and
-modality-specific variance explained. Feature weights were inspected to
-determine whether each factor represented variation shared across T1, T2, and
-ADC or variation concentrated in one or two modalities.
+Because every clustering algorithm returns a partition whether or not structure exists, the number of clusters must be justified by internal validation. The silhouette width measures separation relative to cohesion \cite{rousseeuw1987silhouettes}; resampling stability compares partitions of perturbed data with the adjusted Rand index (ARI) \cite{hubert1985comparing,lange2004stability}; and consensus clustering summarizes how often pairs of samples co-cluster across subsamples \cite{monti2003consensus}. The proportion of ambiguous clustering (PAC) of the consensus matrix is a more reliable criterion than the consensus-CDF area, which tends to favor large $k$ \cite{senbabaoglu2014critical}.
 
-\subsubsection{Clustering in the integrated factor space}
+\subsection{Post-hoc Characterization}
 
-MOFA was used to estimate a continuous multimodal representation and did not itself assign patients to discrete subtypes. Clustering was performed separately on the retained columns of $\mathbf{Z}$, following the latent-factor-based integrative clustering strategy described in prior work
-\citep{shen2009icluster,hellton2016integrative,li2026integrative}. Candidate numbers of clusters were compared using internal separation measures, cluster size balance, and resampling-based stability. The selected clustering solution
-was then used to analyze cross-cluster clinical differences.
+Clusters are interpreted by comparing external variables across them. Benchmarks of marker-gene selection in single-cell data show that simple procedures (Wilcoxon-type rank tests, $t$-tests, logistic regression) are competitive with complex methods, but that testing variables against clusters estimated from the same data inflates significance, so effect sizes and replication matter more than $p$-values alone \cite{pullin2024comparison}. In the radiomics setting the external variables are not used to build the clusters, which removes that double-dipping problem. They can, however, be confounded with center, which motivates batch-adjusted and within-center analyses. Throughout, false-discovery-rate control is applied within each family of tests \cite{benjamini1995fdr}.
 
-Two-dimensional PCA of the MOFA factor scores were used for visualization only; cluster estimation was performed using the retained multidimensional factor representation rather than the two-dimensional plots. Cluster robustness was assessed by repeatedly subsampling patients, refitting the clustering procedure, and comparing assignments using the adjusted Rand index.
+\section{Method}
 
-% Unsupervised Extension: literature review, harmonization tests, MOFA,
-% clustering/stability, post-hoc analysis (files in Unsupervised_Extension/)
-\input{Unsupervised_Extension/unsupervised_extension}
+\subsection{Data and Preprocessing}
 
-\bibliographystyle{plainnat}
+The dataset used in this study was collected by the Affiliated Hospital of Nanjing University of Chinese Medicine from two clinical centers over a specified period, with appropriate patient consent and authorization for public use. The original MRI signals were preprocessed following a multiparametric MRI-based radiomics pipeline \cite{cao2024multiparameter}, implemented by one of the original contributors, Jingya Chen, who is in the Department of Radiology at the Affiliated Hospital of Nanjing University of Chinese Medicine.
+
+T1, T2 and ADC radiomic feature tables (396 features each; $n=403$ patients, 222 from center~1 and 181 from center~2) were aligned by case identifier. For each sequence separately, we removed features with more than 10\% missing values and degenerate features (a single value shared by more than 20\% of an acquisition batch, or zero within-batch interquartile range). Remaining missing values were imputed with the within-batch median. Strictly positive features were log-transformed, which turns multiplicative scale differences into additive shifts; other features were Yeo--Johnson transformed. All features were then standardized and winsorized at $\pm5$ SD. After this step 375, 376 and 344 features remained for T1, T2 and ADC.
+
+\subsection{Acquisition Batches}
+
+Exploratory analysis showed that center~2 is not homogeneous. For about 100 run-length and low-grey-level texture features, 99 of the 181 center-2 patients have values several orders of magnitude larger than all other patients, and the same 99 patients are flagged in T1, T2 and ADC. We scored each patient by the fraction of these features exceeding ten times the center-1 99th percentile, averaged over sequences. The score is sharply bimodal (no patient between 0.36 and 0.63), giving three acquisition batches without using the outcome: C1 ($n=222$), C2a ($n=82$) and C2b ($n=99$). All C2b patients are LVI-negative (Table~\ref{tab:ue-batch}).
+
+\begin{table}[t]
+\caption{Acquisition batches and LVI status}
+\label{tab:ue-batch}
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Batch} & \textbf{LVI$-$} & \textbf{LVI$+$} & \textbf{Total} \\
+\midrule
+C1 (center 1) & 165 & 57 & 222 \\
+C2a (center 2) & 52 & 30 & 82 \\
+C2b (center 2) & 99 & 0 & 99 \\
+\midrule
+Total & 316 & 87 & 403 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Harmonization and Its Evaluation}
+
+We compared six strategies, each applied separately to each sequence: no correction; ComBat with hospital center as batch; ComBat with acquisition batch (primary); ComBat with acquisition batch and LVI protected; CovBat with acquisition batch \cite{chen2022covbat}; and a non-parametric within-batch rank inverse-normal transform (rank-INT). ComBat used the parametric empirical-Bayes \texttt{neuroCombat} implementation. The primary model protects no covariate, so that the outcome never enters the features \cite{nygaard2016methods}.
+
+Harmonization was evaluated with (i) feature-wise Kruskal--Wallis (location) and Brown--Forsythe (scale) tests against batch, with BH-FDR and $\epsilon^2$ effect sizes; (ii) multivariate separability, measured by the PERMANOVA $R^2$ of batch (499 permutations), the silhouette of batch labels in the first ten principal components, and the 5-fold cross-validated AUC of a random forest predicting batch, which is sensitive to higher-order differences; and (iii) preservation of biological signal, measured by the share of LVI-associated features and the cross-validated AUC for LVI.
+
+\subsection{Latent Representation}
+
+Within each harmonized sequence, a greedy filter removed features with $|r|>0.9$ to an already retained feature, and the remaining features were standardized; additional view scaling was therefore disabled in MOFA. MOFA+ (\texttt{mofapy2}) was fitted with T1, T2 and ADC as three views and one group, using 10 initial factors, ARD and spike-and-slab priors on the weights, a 1\% variance-explained drop threshold, at most 1{,}000 iterations with medium convergence, and seed 507 \cite{argelaguet2020mofaplus}. Retained factors were described by their total and per-view variance explained and by their highest-weighted features.
+
+The batch association of each factor was measured by its Kruskal--Wallis $\epsilon^2$ (location), by the ratio of its largest to smallest within-batch SD (scale), and by the random-forest AUC for batch computed from all factors. MOFA was refitted for every harmonization strategy. Two further fits served as sensitivity analyses: one excluding C2b, and one on center~1 alone, which is a single acquisition batch and is therefore free of harmonization and of the batch--outcome confounding.
+
+\subsection{Clustering and Selection of $k$}
+
+Standardized factor scores were clustered by $k$-means (50 starts) for $k=2,\dots,8$. For each $k$ we computed the mean silhouette and the Calinski--Harabasz and Davies--Bouldin indices. We then drew $B=200$ subsamples of 80\% of patients and re-clustered each one, recording the ARI against the full-data partition restricted to the same patients and the ARI between consecutive subsample partitions on their shared patients. We accumulated the consensus matrix $M_{ij}=\#\{\text{co-clustered}\}/\#\{\text{co-sampled}\}$ and its PAC on $(0.1,0.9)$ \cite{monti2003consensus,senbabaoglu2014critical}. Partitions whose smallest cluster held fewer than 10\% of patients were excluded; among the remaining partitions, the optimal $k$ maximized the average of the rank-normalized silhouette, mean ARI and $1-\mathrm{PAC}$.
+
+Every candidate partition was also cross-tabulated against acquisition batch and LVI (Cram\'er's $V$). Robustness was quantified by the ARI between the primary partition and the partitions from Ward clustering, a Gaussian mixture, and every alternative harmonization (same $k$, shared patients). t-SNE embeddings of the factor scores were used for visualization only.
+
+\subsection{Post-hoc Analysis}
+
+Twenty-one clinical, imaging-report and pathology variables (Table~\ref{tab:ue-posthoc}) were compared across clusters. Two implausible values were set to missing: p53 $=11$ (case 314) and PR $=808\%$ (case 50). Continuous variables were compared with the Kruskal--Wallis test (effect size $\epsilon^2$), and categorical variables with the $\chi^2$ test, or a Monte-Carlo $\chi^2$ test when any expected count was below 5 (effect size Cram\'er's $V$). Each variable was also tested with a batch-adjusted likelihood-ratio test of the cluster term, in $\mathrm{rank}(y)\sim\text{cluster}+\text{batch}$ (OLS) for continuous $y$ and in logistic or multinomial regression for categorical $y$, and within center~1 alone. BH-FDR was applied across variables.
+
+A variable was \emph{retained} if it reached $q<0.05$ both unadjusted and batch-adjusted, with at least a small effect ($\epsilon^2\ge0.01$ or $V\ge0.10$), and was a \emph{candidate} if its nominal batch-adjusted $p$ was below 0.05 with at least a small effect. The explanatory value of retained (or, if none, candidate) variables was measured by the repeated 5-fold cross-validated macro-AUC of a multinomial logistic model for cluster membership, compared with a model using all variables and one using batch alone. Clusters were also described by their mean factor scores and by the highest-weighted features of the most discriminating factors.
+
+\section{Results}
+
+\subsection{Data Integrity}
+
+Table~\ref{tab:ue-integrity} reports cross-file consistency checks. For the same patient, segmented tumor volume agreed between sequences in C2a (Spearman $\rho\approx0.76$) but only weakly in C1 ($\rho\approx0.25$) and not at all in C2b ($\rho\approx0$). In no batch did radiomic volume track the radiologist-measured maximum diameter, or whole-tumor mean ADC track the radiologist ADC value. Rows are also ordered by LVI within each center, and the 30 LVI-positive center-2 patients occupy a contiguous block of case identifiers (58--87). These patterns are consistent with records that are not linked to the same patient across the T1, T2, ADC and post-hoc tables, or with different regions of interest, in parts of the cohort. All results below are conditional on the linkage as provided.
+
+\input{Unsupervised_Extension/tables/integrity_table}
+
+\subsection{Center Harmonization}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/harm_pca_by_batch.pdf}
+\caption{First two principal components of each MRI sequence, colored by acquisition batch, before correction (top), after ComBat by hospital center (middle) and after ComBat by acquisition batch (bottom).}
+\label{fig:ue-harm-pca}
+\end{figure*}
+
+\input{Unsupervised_Extension/tables/harmonization_table}
+
+Without correction, batch explained 32--37\% of the multivariate variance within each sequence (PERMANOVA $R^2$; 35\% for the concatenated features), and 91--97\% of features differed in location between batches (Table~\ref{tab:ue-harm}, Figs.~\ref{fig:ue-harm-pca} and~\ref{fig:ue-harm-mv}). ComBat by hospital center removed the center difference by construction, but left 13--16\% of the variance explained by batch and 79--85\% of features batch-associated, because center~2 contains two technically distinct batches. ComBat by acquisition batch reduced the batch $R^2$ to below 0.001 ($p=1.0$), the batch silhouette from 0.29 to $-0.02$, and the share of location-associated features to 5--11\%.
+
+Fewer features still differed in scale (25--32\%), and the random forest still identified batch from the full feature set (AUC $\approx1$). The rank-INT transform removed all marginal differences (0\% of features significant), yet the random forest still reached AUC 0.96--0.98. The residual batch information is therefore carried by the joint (covariance) structure rather than by individual features, and CovBat did not remove it. Protecting LVI in ComBat raised the LVI AUC from 0.70 to 0.88, the inflation predicted by Nygaard et al.~\cite{nygaard2016methods} when the protected variable is confounded with batch; this model was therefore not used as the primary.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/harm_effectsize_hist.pdf}\\[2pt]
+\includegraphics[width=\columnwidth]{figures/harm_multivariate.pdf}
+\caption{Harmonization tests. Top: distribution of feature-wise batch effect sizes ($\epsilon^2$). Bottom: PERMANOVA $R^2$ of batch and cross-validated random-forest AUC for predicting batch, for each strategy.}
+\label{fig:ue-harm-mv}
+\end{figure}
+
+\subsection{MOFA Representation}
+
+On the primary harmonized data, MOFA retained eight factors that explained 46\%, 48\% and 45\% of the variance of T1, T2 and ADC (Fig.~\ref{fig:ue-mofa}). Factor~1 was shared by all three sequences, factors 2--3 were T1-specific, factors 4 and 8 mainly T2, and factors 5--7 mainly ADC, with a T2 contribution to factors 6--7. Without correction, or with ComBat by center, one factor was almost entirely a batch factor ($\epsilon^2=0.58$ and $0.61$). After ComBat by batch, the largest factor location effect was $\epsilon^2=0.07$ (Fig.~\ref{fig:ue-mofa-batch}). However, C2b patients had up to 12-fold smaller spread on the shared factors than C1 patients. Excluding C2b reduced this ratio to 2.4, and the random forest still predicted batch from the factors (AUC 0.99).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/mofa_variance_explained.pdf}
+\caption{Variance explained (\%) by each MOFA factor in each MRI sequence (primary harmonization).}
+\label{fig:ue-mofa}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/mofa_factor_batch_assoc.pdf}
+\caption{Batch association of the MOFA factors under each harmonization strategy: location ($\epsilon^2$, left) and the ratio of largest to smallest within-batch SD (right).}
+\label{fig:ue-mofa-batch}
+\end{figure}
+
+\subsection{Cluster Selection and Stability}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/cluster_selection.pdf}
+\caption{Selection of $k$ on the primary MOFA representation: mean silhouette; ARI of subsample partitions with the full-data partition (mean $\pm$ SD) and between subsamples; PAC; and Cram\'er's $V$ of the partition with acquisition batch and LVI. The dotted line marks the selected $k=3$.}
+\label{fig:ue-k}
+\end{figure*}
+
+\input{Unsupervised_Extension/tables/k_selection_table}
+
+Table~\ref{tab:ue-k} and Fig.~\ref{fig:ue-k} summarize the internal validation. Silhouette widths were low for every $k$ (0.22--0.24), indicating weak separation. The partitions with $k\ge4$ isolated a cluster of fewer than 10\% of patients (for $k=4$, 37 patients, 35 of them LVI-positive). This cluster is the contiguous center-2 LVI-positive block plus a few center-1 patients, so its strong LVI association (Cram\'er's $V\approx0.57$) reflects the extraction-block structure rather than an imaging phenotype. The composite criterion selected $k=3$, with mean subsample ARI $0.74\pm0.23$, pairwise ARI 0.59, PAC 0.50, and cluster sizes 260/79/64.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/consensus_matrices.pdf}
+\caption{Consensus matrices ($B=200$ subsamples of 80\%) for $k=2$--5, ordered by average-linkage clustering of $1-M$, and the empirical CDF of the consensus index for $k=2$--8.}
+\label{fig:ue-cons}
+\end{figure*}
+
+Consensus matrices (Fig.~\ref{fig:ue-cons}) show a clear two-way split between cluster~1 and clusters 2--3, with less stable membership between clusters 2 and 3. Cluster~1 contains 98 of the 99 C2b patients (Cram\'er's $V$ with batch 0.30; Table~\ref{tab:ue-clbatch}, Fig.~\ref{fig:ue-tsne}), the signature of the residual covariance batch effect. The partition was only moderately robust (Table~\ref{tab:ue-robust}): it agreed with Ward clustering (ARI 0.59) but not with a full-covariance Gaussian mixture (ARI 0.02), and its agreement with partitions from alternative harmonizations was low (ARI 0.17--0.42). In center~1 alone, the criterion selected $k=2$ (silhouette 0.18, ARI 0.76, PAC 0.38), and these two clusters were not associated with LVI ($V=0.02$, $p=0.75$).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/cluster_tsne.pdf}
+\caption{t-SNE of the MOFA factor scores (visualization only), colored by cluster, acquisition batch and LVI.}
+\label{fig:ue-tsne}
+\end{figure*}
+
+\input{Unsupervised_Extension/tables/cluster_batch_table}
+\input{Unsupervised_Extension/tables/robustness_table}
+
+\subsection{Radiomic Characterization}
+
+The clusters were separated mainly by factor~4 ($\epsilon^2=0.38$; T2 grey-level non-uniformity), factor~5 ($\epsilon^2=0.28$; ADC high-grey-level run emphasis) and factor~6 ($\epsilon^2=0.24$; ADC low-grey-level run emphasis and low T2 intensity percentiles). Cluster~2 scored high and cluster~3 low on factors 4 and 5, and cluster~3 was lowest on factor~6. Cluster~1 lay near the origin on most factors, consistent with the compressed C2b patients it contains.
+
+\subsection{Post-hoc Analysis}
+
+\input{Unsupervised_Extension/tables/posthoc_table}
+
+No post-hoc variable met the retention rule (Table~\ref{tab:ue-posthoc}, Fig.~\ref{fig:ue-posthoc}). The only candidate with a non-negligible effect was the radiologist-measured ADC value. It was lower in cluster~1 (median 0.75 vs.\ 0.83 and 0.82 $\times10^{-3}\,$mm$^2$/s; $\epsilon^2=0.045$, $q=0.001$), and the difference persisted after batch adjustment (nominal $p=0.015$, $q=0.15$) and within center~1 ($p=0.003$). LVI was associated with cluster only after batch adjustment ($q=0.003$). This association came entirely from C2a, where all 30 LVI-positive patients fell in cluster~1, and was absent within center~1 ($p=0.38$), so we regard it as an artifact of the center-2 extraction blocks. Ki-67 and ER had nominal batch-adjusted $p<0.05$, but negligible effects ($\epsilon^2<0.01$).
+
+In explaining cluster membership, all 21 variables together barely exceeded chance (cross-validated macro-AUC 0.55), ADC alone reached 0.62, and batch alone reached 0.68 (Table~\ref{tab:ue-models}). For the center-1 clusters, DWI hyperintensity (98\% vs.\ 90\%), the late-arterial enhancement ratio and Ki-67 were nominally associated ($p<0.02$, $q\approx0.10$), with a joint cross-validated AUC of 0.66.
+
+\input{Unsupervised_Extension/tables/posthoc_models_table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.62\columnwidth]{figures/posthoc_effects_primary.pdf}
+\hfill
+\includegraphics[width=0.34\columnwidth]{figures/posthoc_retained_primary.pdf}
+\caption{Post-hoc effect sizes for the primary clusters (left; orange: candidate with nominal batch-adjusted $p<0.05$) and radiologist ADC value by cluster (right).}
+\label{fig:ue-posthoc}
+\end{figure}
+
+\section{Discussion}
+
+Harmonization was decisive in this cohort, but the relevant batch was not the hospital. Center~2 combines at least two extraction or acquisition runs, and ComBat by center left them intact, in line with the recommendation that the batch should be defined by the acquisition setting \cite{orlhac2022guide}. Defining batches from the data and applying ComBat to them removed the location and scale batch effects that dominate the uncorrected principal components and MOFA factors.
+
+Three findings nevertheless limit what the unsupervised clusters can show. First, batch effects in the covariance structure remain: they are detectable by a nonlinear classifier and visible as compressed factor scores in C2b, and neither CovBat nor a rank-based transform removed them. Generalized ComBat variants designed for multimodal distributions and multiple batch effects \cite{horng2022generalized} are a natural next step. Second, batch is confounded with LVI: C2b is entirely LVI-negative, and the center-2 LVI-positive patients form their own block. No harmonization can separate batch from outcome under this design, and protecting LVI inflates its apparent signal \cite{nygaard2016methods,leek2010tackling}. Third, the cross-file consistency checks suggest that patient linkage between sequences and the clinical table may be incorrect for part of the cohort.
+
+Within these limits, the latent space shows weak cluster structure. The silhouette is about 0.23, and subsampling gives a moderately stable three-cluster partition, driven by T2 and ADC texture factors, that depends on the harmonization choice. Unlike integrative radiomics clustering in breast MRI, where clusters differed in receptor status, tumor size and nodal involvement \cite{he2024integrative}, our clusters are not explained by the clinical, imaging-report or pathology variables. The only consistent association is a lower radiologist ADC value in cluster~1, which also holds within center~1. Lower ADC is generally associated with higher cellularity, but the effect is small. The single-center analysis, which is free of harmonization, likewise found no LVI-related phenotype. These results agree with the Supervised Report, in which the LVI signal remaining within a single acquisition batch was modest.
+
+\section{Conclusion}
+
+We combined center harmonization, MOFA+ latent representation, stability-based clustering and post-hoc analysis to study the structure of multi-sequence MRI radiomics in endometrial cancer. Harmonization by acquisition batch, rather than by hospital, was needed to remove the dominant technical variation, but residual covariance effects and the confounding of batch with LVI remained. The resulting clusters are weak, only moderately stable and not explained by clinical or pathological variables, so we present them as exploratory imaging phenotypes rather than clinically validated subtypes.
+
+Future work should (i) verify the case linkage and acquisition metadata and harmonize on recorded scanner and protocol information rather than inferred batches; (ii) re-extract features with a common discretization; (iii) evaluate harmonization methods that address covariance and multimodal batch effects; and (iv) validate any phenotype in an external cohort in which LVI is not confounded with acquisition.
+
+\section{Reproducibility}
+All code, data and results are available at \texttt{github.com/wpuzhu/STATS507-Coursework}. The scripts in \texttt{code/unsupervised\_extension} reproduce every table and figure in this report from the raw feature tables with fixed random seeds, and \texttt{run\_all.sh} reproduces both reports.
+
+\bibliographystyle{IEEEtran}
 \bibliography{reference}
 
 \end{document}

@@ -19,15 +19,17 @@ def esc(s):
 
 
 def write(name, df, caption, label, colfmt, note=None, size=r"\small",
-          fit=False):
+          fit=False, wide=False):
+    """wide=True spans both columns of the two-column IEEE layout."""
+    env = "table*" if wide else "table"
     body = df.to_latex(index=False, escape=False, column_format=colfmt).strip()
     if fit:
         body = r"\resizebox{\linewidth}{!}{%" + "\n" + body + "}"
-    out = [r"\begin{table}[htbp]", r"\centering", size,
+    out = [rf"\begin{{{env}}}[{'t' if wide else 'htbp'}]", r"\centering", size,
            rf"\caption{{{caption}}}", rf"\label{{{label}}}", body]
     if note:
         out.append(rf"\par\smallskip\parbox{{0.95\linewidth}}{{\footnotesize {note}}}")
-    out.append(r"\end{table}")
+    out.append(rf"\end{{{env}}}")
     (RT / f"{name}.tex").write_text("\n".join(out) + "\n")
 
 
@@ -49,7 +51,7 @@ def main():
           "that should agree for the same patient.", "tab:ue-integrity",
           "lrrrrrr", "Vol.: radiomic VolumeCount; diameter: radiologist maximum "
           "diameter; ADC: whole-tumor radiomic mean ADC vs radiologist ADC.",
-          fit=True)
+          fit=True, wide=True)
 
     h = pd.read_csv(TAB / "harmonization_summary.csv")
     h = h[h.modality != "Concatenated"].copy()
@@ -74,7 +76,7 @@ def main():
           "PERMANOVA; Silh.: silhouette of batch labels in 10 PCs; RF AUC: "
           "5-fold CV random-forest AUC predicting batch; LVI feat.: \\% of "
           "features with LVI $q<0.05$; LVI AUC: CV logistic AUC.",
-          size=r"\scriptsize", fit=True)
+          size=r"\scriptsize", fit=True, wide=True)
 
     k = pd.read_csv(TAB / "cluster_selection_primary.csv")
     t = pd.DataFrame({
@@ -97,7 +99,7 @@ def main():
           "ARI: mean $\\pm$ SD over 200 subsamples of 80\\%; PAC: proportion "
           "of consensus indices in (0.1, 0.9); Score: composite rank "
           "criterion (partitions with a cluster $<$10\\% excluded). Bold: "
-          "selected $k$.", size=r"\scriptsize", fit=True)
+          "selected $k$.", size=r"\scriptsize", fit=True, wide=True)
 
     cb = pd.read_csv(TAB / "cluster_by_batch.csv")
     cb.columns = ["Cluster", "C1", "C2a", "C2b", "Total"]
@@ -141,7 +143,7 @@ def main():
           "adj: batch-adjusted likelihood-ratio test; C1: within center 1. "
           "$q$: BH-FDR across variables. No variable met the retention rule "
           "($q<0.05$ unadjusted and adjusted with at least a small effect).",
-          size=r"\scriptsize", fit=True)
+          size=r"\scriptsize", fit=True, wide=True)
 
     rows = []
     for name, f in [("Primary ($k=3$)", "posthoc_models_primary.csv"),
