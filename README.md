@@ -25,6 +25,8 @@ code/
 │   ├── 03_fusion_networks.py       progressive fusion networks (10 seeds)
 │   └── 04_spectral_clustering.py   single-modality spectral clustering
 └── unsupervised_extension/       extended unsupervised analysis (Unsupervised Extension)
+    ├── README.md                   steps, outputs and report sections
+    ├── run_all.sh                  runs the extension on its own (~8 min)
     ├── 01_harmonization.py         ComBat / CovBat / rank-INT comparison and tests
     ├── 02_mofa.py                  MOFA+ latent factors
     ├── 03_clustering.py            k-means, silhouette, subsampling ARI, consensus / PAC
@@ -50,6 +52,24 @@ The notebooks in `code/` document the original step-by-step development and writ
 2. **Center harmonization.** Center 2 contains two acquisition batches (C2a, C2b), detected without labels from run-length texture features recorded on a different scale. Compared settings: original raw z-score, log / Yeo-Johnson transform without harmonization, ComBat by center, and ComBat by acquisition batch (primary). All transforms are fitted on the training data only.
 3. **Supervised learning.** ANOVA-F selection (k = 50) and |r| > 0.8 filtering; logistic regression and linear SVM for every modality combination; late fusion; RBF kernel models; threshold tuning; progressive fusion networks. Robustness: repeated 5-fold CV with the whole pipeline inside each fold, center-1-only CV, leave-one-center-out validation.
 4. **Unsupervised learning.** Single-modality spectral clustering (ARI stability, consensus PAC) on original and harmonized features, with cluster composition by LVI and acquisition batch. The unsupervised extension adds MOFA+ integration, k-means with silhouette / ARI / PAC selection of k, and post-hoc clinical analysis.
+
+### Unsupervised Extension
+The extension (`code/unsupervised_extension`, report `report/Unsupervised_Extension.tex`) goes beyond single-modality spectral clustering:
+
+1. **Harmonization tests.** Six strategies (none, ComBat by center, ComBat by acquisition batch, ComBat with LVI protected, CovBat, within-batch rank-INT) are compared with feature-wise location / scale tests, PERMANOVA R², batch silhouette and a random-forest batch classifier.
+2. **Latent representation.** MOFA+ integrates T1, T2 and ADC into shared and sequence-specific factors (8 factors, 45–48% variance explained per sequence).
+3. **Clustering and stability.** k-means on the factor scores, with k chosen from the silhouette width, subsampling adjusted Rand index and consensus clustering (PAC); robustness to the clustering algorithm and to the harmonization choice.
+4. **Post-hoc analysis.** Clinical, imaging-report and pathology variables compared across clusters, with batch-adjusted and within-center-1 tests and explanatory models.
+
+Run it on its own with `code/unsupervised_extension/run_all.sh`; see its [README](code/unsupervised_extension/README.md) for the outputs of each step.
+
+### Reports
+The LaTeX sources in `report/` mirror the Overleaf project (IEEE conference template, shared `report/figures/` and `report/reference.bib`):
+
+| Report | Source | Code | Results |
+|---|---|---|---|
+| Supervised Report: harmonization, supervised models, fusion networks, spectral clustering | `report/Supervised_Report.tex` | `code/pipeline` | `results/main` |
+| Unsupervised Extension: harmonization tests, MOFA latent space, clustering stability, post-hoc analysis | `report/Unsupervised_Extension.tex` | `code/unsupervised_extension` | `results/unsupervised_extension` |
 
 ### Data caveats
 * Acquisition batch is confounded with the outcome: batch C2b contains no LVI-positive patient, and the center-2 LVI-positive patients form a separately extracted block. Harmonization cannot separate batch from LVI under this design.

@@ -20,7 +20,6 @@ python3 04_spectral_clustering.py > "../../$LOG/spectral_log.txt" 2>&1
 cd ../unsupervised_extension
 echo "[extension] Harmonization, MOFA, clustering, post-hoc analysis"
 ./run_all.sh
-python3 06_latex_tables.py > /dev/null
 cd ../..
 cp results/main/figures/*.pdf report/figures/
 echo "done"
