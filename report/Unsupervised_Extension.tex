@@ -1,0 +1,220 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{subcaption}
+\usepackage[authoryear]{natbib}
+\usepackage{amsmath}
+\usepackage{booktabs}
+
+\title{Multi-modal MRI for Identifying Lymphovascular Invasion in Endometrial Cancer}
+\author{Puzhu Wang}
+\date{March 2026}
+
+\begin{document}
+
+\maketitle
+
+\subsection{Literature Review}
+\label{sec:harmonization-integration}
+
+Radiomics provides a quantitative characterization of tumor phenotype through
+high-dimensional features describing intensity, shape, texture, and spatial
+heterogeneity. In multi-sequence magnetic resonance imaging (MRI), the imaging
+sequences offer related but nonredundant descriptions of the same tumor. T1-
+and T2-weighted images characterize different aspects of anatomy and tissue
+composition, whereas apparent diffusion coefficient (ADC) images quantify
+water diffusion and may provide information related to tumor cellularity.
+Joint analysis of these complementary measurements can therefore provide a
+more complete description of tumor heterogeneity than separate analyses of
+the individual sequences. More broadly, the multi-view and multi-omics
+literature has shown that integrating complementary data sources can reveal
+coordinated sources of variation, facilitate patient stratification, and
+support biomarker discovery \citep{subramanian2020multiomics,
+vahabi2022unsupervised}.
+
+A central challenge in multicenter radiomic analysis is that extracted
+features reflect technical as well as biological variation. Scanner
+manufacturer, magnetic-field strength, acquisition and reconstruction
+parameters, voxel size, segmentation procedures, and intensity preprocessing
+can affect feature distributions and reproducibility
+\citep{mali2021radiomics}. Consequently, directly pooling radiomic features
+across centers can introduce systematic location and scale differences. When
+these technical effects are large, unsupervised dimension reduction and
+clustering may primarily distinguish imaging centers rather than clinically
+meaningful tumor phenotypes. Multisite MRI studies have similarly demonstrated
+that scanner effects can dominate major directions of variation and reduce the
+reproducibility of downstream analyses \citep{fortin2018cortical}.
+
+ComBat was originally introduced as an empirical Bayes method for correcting
+batch effects in high-dimensional genomic data \citep{johnson2007combat}. For
+each feature, it estimates batch-specific additive and multiplicative effects
+while borrowing information across features to stabilize estimation. ComBat
+was subsequently adapted to medical imaging and radiomics.
+For example, \citet{orlhac2018postreconstruction} reported that ComBat reduced
+center-associated differences in PET radiomic features while retaining
+patient-specific variation, and \citet{fortin2018cortical} demonstrated the
+removal of scanner-associated location and scale effects in multicenter MRI.
+Subsequent studies further showed that ComBat and its extensions can improve
+radiomic-feature comparability and support the development of more
+reproducible multicenter models
+\citep{daano2020combat,masson2021harmonization}.
+
+Harmonization alone, however, does not integrate information across MRI
+sequences. After center correction, the T1, T2, and ADC measurements remain
+separate high-dimensional feature matrices. Direct feature concatenation is a
+simple integration strategy, but it can allow a modality with more features or
+greater residual variance to dominate the analysis. It also does not explicitly
+distinguish variation shared across modalities from variation specific to one
+modality. These limitations motivate structured latent-variable methods for
+multimodal integration.
+
+Integrative clustering methods identify sample subgroups by jointly analyzing
+multiple high-dimensional modalities. A recent review by
+\citet{li2026integrative} organizes these methods into approaches based on
+shared latent representations, probabilistic dependence among
+modality-specific clusterings, and fusion of sample-similarity structures. One
+widely used strategy is to first estimate a low-dimensional representation
+shared across modalities and then cluster the estimated scores. The iCluster
+framework introduced a joint latent-variable model linking multiple genomic
+data types through common sample-level factors \citep{shen2009icluster}.
+Extensions incorporated heterogeneous outcome distributions and sparse feature
+selection \citep{mo2013pattern}, as well as fully Bayesian inference
+\citep{mo2018bayesian}. Similarly, Joint and Individual Variation Explained
+(JIVE) decomposes linked datasets into joint structure, modality-specific
+structure, and residual noise \citep{lock2013jive}; clustering the joint and
+individual components can reveal shared and modality-specific subgroups,
+respectively \citep{hellton2016integrative}.
+
+A second family of methods estimates related but potentially distinct
+clusterings for the individual modalities. Bayesian correlated clustering
+models dependence between modality-specific cluster memberships
+\citep{kirk2012bayesian}, whereas Bayesian consensus clustering shrinks the
+modality-specific partitions toward an overall sample partition
+\citep{lock2013consensus}. Clusternomics permits more heterogeneous
+cross-modality structure by modeling both local and global clusters with a
+hierarchical Dirichlet mixture model \citep{gabasova2017clusternomics}. A third
+family integrates sample similarities rather than the original features.
+Similarity Network Fusion constructs a sample-similarity network for each
+modality and iteratively combines the networks before clustering
+\citep{wang2014snf}. Such similarity-based approaches can accommodate
+modality-specific distance measures and nonlinear neighborhood structure.
+
+Among shared-latent-representation approaches, Multi-Omics Factor Analysis
+(MOFA) provides a general probabilistic multi-view factor model. Although it
+was originally developed for multi-omics data, its formulation is applicable
+to other aligned, high-dimensional modalities, including radiomic feature
+sets. For modality $m$, the model can be summarized as
+\begin{equation}
+    \mathbf{X}^{(m)} = \mathbf{Z}\mathbf{W}^{(m)\mathsf{T}}
+    + \mathbf{E}^{(m)},
+\end{equation}
+where $\mathbf{Z}$ contains patient-level factor scores,
+$\mathbf{W}^{(m)}$ contains modality-specific feature weights, and
+$\mathbf{E}^{(m)}$ contains residual variation. Sparsity-inducing and automatic
+relevance determination priors allow a factor to explain variation shared by
+several modalities or variation concentrated in a single modality
+\citep{argelaguet2018mofa}. MOFA+ extends this framework with more scalable
+variational inference and group-wise regularization for jointly modeling
+multiple groups or experimental conditions \citep{argelaguet2020mofaplus}.
+It can also accommodate partially overlapping sample sets and missing
+observations; nevertheless, reliable cross-modal integration requires aligned
+sample identities or sufficient overlap to connect the modalities.
+
+Taken together, this literature distinguishes two complementary statistical
+objectives. Harmonization methods such as ComBat target known technical
+variation across acquisition environments, whereas multi-view factor models
+such as MOFA characterize covariance shared across or specific to different
+modalities. Their sequential use may reduce the influence of technical effects
+on the learned representation while retaining the interpretability of latent
+factors and modality-specific feature weights. However, neither harmonization
+nor latent-factor estimation guarantees biological validity. Center may be
+confounded with patient composition, harmonization may attenuate meaningful
+variation, and factors explaining substantial variance need not be clinically
+relevant. These limitations motivate explicit evaluation of technical-effect
+removal and the stability of the resulting factors and clusters.
+
+
+\section{Methods}
+\subsection{Methods: Harmonization and Multimodal Integration}
+\label{sec:multimodal-methods}
+
+\subsubsection{Data organization and preprocessing}
+
+The dataset used in this study was collected by the Affiliated Hospital of Nanjing University of Chinese Medicine from two clinical centers over a specified period, with appropriate patient consent and authorization for public use. The original MRI signals were preprocessed following a multiparametric MRI-based radiomics pipeline \citep{cao2024multiparameter}, implemented by one of the original contributors, Jingya Chen, who is in the Department of Radiology at the Affiliated Hospital of Nanjing University of Chinese Medicine.
+
+Radiomic features were extracted from the T1-, T2-, and ADC-weighted MRI sequences and organized as three patient-by-feature matrices. Patient identifiers were aligned across modalities so that corresponding rows referred
+to the same patient. Features with unusable or missing measurements were handled before model fitting, and the same feature definitions and ordering were retained across imaging centers. All preprocessing was performed separately by modality to preserve the multi-view structure of the data.
+
+\subsubsection{Center-effect assessment and ComBat harmonization}
+
+Before multimodal integration, center effects were evaluated within each MRI
+modality. For each radiomic feature, its association with imaging center was
+examined, and multiplicity was controlled using false-discovery-rate
+adjustment. The number and proportion of center-associated features and the
+corresponding effect sizes were summarized for T1, T2, and ADC. Low-dimensional
+visualizations colored by center were also inspected to assess multivariate
+separation between centers.
+
+ComBat harmonization was then performed separately on the T1, T2, and ADC
+feature matrices, using imaging center as the batch variable
+\citep{johnson2007combat,orlhac2018postreconstruction}. In its location--scale
+form, the observed value of feature $j$ for patient $i$ from center $g$ was
+modeled as
+\begin{equation}
+    x_{ij} = \alpha_j + \gamma_{gj} + \delta_{gj}\epsilon_{ij},
+\end{equation}
+where $\alpha_j$ denotes the overall feature mean and $\gamma_{gj}$ and
+$\delta_{gj}$ denote center-specific additive and multiplicative effects. The
+empirical Bayes estimates of $\gamma_{gj}$ and $\delta_{gj}$ were removed to
+obtain harmonized features. Harmonization was conducted independently for each
+MRI sequence because the feature distributions and acquisition effects could
+differ across modalities. After harmonization, features were standardized
+within modality before MOFA fitting. Accordingly, additional view scaling was
+disabled in MOFA (\texttt{scale\_views = False}).
+
+The effectiveness of harmonization was assessed by repeating the feature-wise
+and multivariate center-effect analyses. A successful correction was expected
+to reduce center-associated effect sizes and center predictability.
+
+\subsubsection{MOFA integration}
+
+The harmonized T1, T2, and ADC matrices were integrated with MOFA+ using the
+\texttt{mofapy2} implementation \citep{argelaguet2018mofa,
+argelaguet2020mofaplus}. All patients were treated as a single analysis group
+in the primary harmonized analysis, while the three MRI sequences were
+specified as separate views. For modality $m$, MOFA used the probabilistic
+factor model
+\begin{equation}
+    \mathbf{X}^{(m)} = \mathbf{Z}\mathbf{W}^{(m)\mathsf{T}}
+    + \mathbf{E}^{(m)},
+\end{equation}
+where $\mathbf{Z}$ is the common patient-by-factor score matrix,
+$\mathbf{W}^{(m)}$ is the modality-specific feature-loading matrix, and
+$\mathbf{E}^{(m)}$ is residual variation. Ten initial factors were specified.
+Spike-and-slab sparsity and automatic relevance determination were enabled for
+the weights so that factors unsupported by a modality, or by the data more
+generally, could be shrunk toward inactivity. The model was trained for a
+maximum of 1,000 iterations with medium convergence criteria, a variance-
+explained factor-dropping threshold of 0.01, and random seed 507. GPU training
+was not used.
+
+Factors retained for downstream analysis were evaluated using their total and
+modality-specific variance explained. Feature weights were inspected to
+determine whether each factor represented variation shared across T1, T2, and
+ADC or variation concentrated in one or two modalities.
+
+\subsubsection{Clustering in the integrated factor space}
+
+MOFA was used to estimate a continuous multimodal representation and did not itself assign patients to discrete subtypes. Clustering was performed separately on the retained columns of $\mathbf{Z}$, following the latent-factor-based integrative clustering strategy described in prior work
+\citep{shen2009icluster,hellton2016integrative,li2026integrative}. Candidate numbers of clusters were compared using internal separation measures, cluster size balance, and resampling-based stability. The selected clustering solution
+was then used to analyze cross-cluster clinical differences.
+
+Two-dimensional PCA of the MOFA factor scores were used for visualization only; cluster estimation was performed using the retained multidimensional factor representation rather than the two-dimensional plots. Cluster robustness was assessed by repeatedly subsampling patients, refitting the clustering procedure, and comparing assignments using the adjusted Rand index.
+
+% Unsupervised Extension: literature review, harmonization tests, MOFA,
+% clustering/stability, post-hoc analysis (files in Unsupervised_Extension/)
+\input{Unsupervised_Extension/unsupervised_extension}
+
+\bibliographystyle{plainnat}
+\bibliography{reference}
+
+\end{document}

@@ -1,0 +1,20 @@
+analysis,setting,feature_set,auc_mean,auc_sd,n
+Repeated 5-fold CV (all patients),Original (raw z-score),T1+T2,0.8889808169934641,0.033968550971820465,329
+Repeated 5-fold CV (all patients),Original (raw z-score),T1+T2+ADC,0.900504705882353,0.031327627514709314,329
+Repeated 5-fold CV (all patients),No harmonization,T1+T2,0.8776717647058823,0.041736797919746896,329
+Repeated 5-fold CV (all patients),No harmonization,T1+T2+ADC,0.8828607516339868,0.03992560458688943,329
+Repeated 5-fold CV (all patients),ComBat (center),T1+T2,0.8826564705882352,0.04632864128929583,329
+Repeated 5-fold CV (all patients),ComBat (center),T1+T2+ADC,0.885910751633987,0.04673578785752373,329
+Repeated 5-fold CV (all patients),ComBat (acquisition batch),T1+T2,0.8272588235294117,0.04935662491564611,329
+Repeated 5-fold CV (all patients),ComBat (acquisition batch),T1+T2+ADC,0.8145188888888889,0.047929235264023866,329
+Repeated 5-fold CV (center 1 only),Single batch,T1,0.6832833333333334,0.09110749994725591,169
+Repeated 5-fold CV (center 1 only),Single batch,T2,0.5653666666666667,0.10977744345678087,169
+Repeated 5-fold CV (center 1 only),Single batch,ADC,0.6022796296296297,0.08280449251991996,169
+Repeated 5-fold CV (center 1 only),Single batch,T1+T2,0.6772870370370369,0.0813728321286778,169
+Repeated 5-fold CV (center 1 only),Single batch,T1+T2+ADC,0.6723277777777777,0.06367407259298036,169
+Train center 1 -> test center 2,No harmonization,T1+T2,0.528974358974359,,160
+Train center 2 -> test center 1,No harmonization,T1+T2,0.718695500523195,,169
+Train center 1 -> test center 2,ComBat (center),T1+T2,0.7817948717948717,,160
+Train center 2 -> test center 1,ComBat (center),T1+T2,0.7174747122427625,,169
+Train center 1 -> test center 2,ComBat (acquisition batch),T1+T2,0.9789743589743589,,160
+Train center 2 -> test center 1,ComBat (acquisition batch),T1+T2,0.6110917335193583,,169

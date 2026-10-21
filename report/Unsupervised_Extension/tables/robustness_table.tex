@@ -1,0 +1,22 @@
+\begin{table}[htbp]
+\centering
+\small
+\caption{Robustness of the primary partition ($k=3$) to the clustering algorithm and the harmonization choice.}
+\label{tab:ue-robust}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrrr}
+\toprule
+Comparison & $n$ & ARI & Selected $k$ (other) \\
+\midrule
+k-means vs Agglomerative (Ward) & 403 & 0.59 & -- \\
+k-means vs Gaussian mixture & 403 & 0.02 & -- \\
+ComBat (batch) vs No correction & 403 & 0.18 & 3 \\
+ComBat (batch) vs ComBat (center) & 403 & 0.17 & 2 \\
+ComBat (batch) vs ComBat (batch, LVI protected) & 403 & 0.32 & 2 \\
+ComBat (batch) vs Rank-INT (batch) & 403 & 0.25 & 3 \\
+ComBat (batch) vs CovBat (batch) & 403 & 0.42 & 2 \\
+ComBat (batch) vs ComBat (batch), excl. C2b & 304 & 0.19 & 7 \\
+ComBat (batch) vs Center 1 only & 222 & 0.23 & 2 \\
+\bottomrule
+\end{tabular}}
+\end{table}

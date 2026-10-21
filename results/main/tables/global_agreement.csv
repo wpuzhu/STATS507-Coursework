@@ -1,0 +1,7 @@
+setting,pair,distance_correlation
+Original (raw z-score),T1-T2,0.4457218507781845
+Original (raw z-score),T1-ADC,0.2308780061552241
+Original (raw z-score),T2-ADC,0.9174578615588806
+ComBat (acquisition batch),T1-T2,0.3586900267287168
+ComBat (acquisition batch),T1-ADC,0.37073080169840533
+ComBat (acquisition batch),T2-ADC,0.4344595633273456

@@ -1,0 +1,12 @@
+# Python 3.13 (tested). Install with: pip install -r requirements.txt
+numpy==1.26.4
+pandas==2.3.3
+scipy==1.16.3
+scikit-learn==1.9.0
+statsmodels==0.14.6
+matplotlib==3.10.8
+openpyxl==3.1.5
+torch==2.10.0
+neuroCombat==0.2.12
+mofapy2==0.7.4
+h5py==3.16.0

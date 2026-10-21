@@ -1,0 +1,4 @@
+model,n_predictors,cv_macro_AUC,cv_sd
+"Candidate variables: DWI hyperintensity, Enhancement ratio, late arterial, Ki-67 (%)",3,0.6574176929392447,0.05673851730406158
+All post-hoc variables,21,0.5500054392446634,0.06890896744735502
+Candidate variables + batch,4,0.6574176929392447,0.05673851730406158

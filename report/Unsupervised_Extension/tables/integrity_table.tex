@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\small
+\caption{Data-integrity checks: Spearman correlations between quantities that should agree for the same patient.}
+\label{tab:ue-integrity}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrrrrrr}
+\toprule
+Batch & $n$ & Vol.\ T1--T2 & Vol.\ T1--ADC & Vol.\ T2--ADC & Vol.\ vs diameter & ADC vs radiologist \\
+\midrule
+C1 & 222 & 0.25 & 0.22 & 0.51 & -0.05 & -0.08 \\
+C2a & 82 & 0.76 & 0.77 & 0.76 & 0.11 & -0.02 \\
+C2b & 99 & 0.01 & -0.08 & 0.05 & 0.01 & -0.15 \\
+All & 403 & 0.64 & 0.67 & 0.75 & 0.07 & -0.05 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\parbox{0.95\linewidth}{\footnotesize Vol.: radiomic VolumeCount; diameter: radiologist maximum diameter; ADC: whole-tumor radiomic mean ADC vs radiologist ADC.}
+\end{table}

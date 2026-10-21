@@ -1,0 +1,10 @@
+comparison,k,ARI,n,other_selected_k
+k-means vs Agglomerative (Ward),3,0.5928506945049602,403,
+k-means vs Gaussian mixture,3,0.01795364131916522,403,
+ComBat (batch) vs No correction,3,0.18047836028741351,403,3.0
+ComBat (batch) vs ComBat (center),3,0.1699092653675958,403,2.0
+"ComBat (batch) vs ComBat (batch, LVI protected)",3,0.3200203369967905,403,2.0
+ComBat (batch) vs Rank-INT (batch),3,0.24893524432081696,403,3.0
+ComBat (batch) vs CovBat (batch),3,0.42037682183475783,403,2.0
+"ComBat (batch) vs ComBat (batch), excl. C2b",3,0.18993171494490638,304,7.0
+ComBat (batch) vs Center 1 only,3,0.22940334355087835,222,2.0

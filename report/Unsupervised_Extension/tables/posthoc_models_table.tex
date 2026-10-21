@@ -1,0 +1,20 @@
+\begin{table}[htbp]
+\centering
+\scriptsize
+\caption{Explanatory value of post-hoc variables for cluster membership (multinomial logistic regression, 10$\times$5-fold CV macro-AUC).}
+\label{tab:ue-models}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llrr}
+\toprule
+Clustering & Predictors & \# & CV AUC \\
+\midrule
+Primary ($k=3$) & Batch only & 3 & 0.68 $\pm$ 0.03 \\
+ & Candidate variables: ADC value (radiologist) & 1 & 0.62 $\pm$ 0.04 \\
+ & All post-hoc variables & 21 & 0.55 $\pm$ 0.05 \\
+ & Candidate variables + batch & 4 & 0.71 $\pm$ 0.03 \\
+Center 1 only ($k=2$) & Candidate variables: DWI hyperintensity, Enhancement ratio, late arterial, Ki-67 (\%) & 3 & 0.66 $\pm$ 0.06 \\
+ & All post-hoc variables & 21 & 0.55 $\pm$ 0.07 \\
+ & Candidate variables + batch & 4 & 0.66 $\pm$ 0.06 \\
+\bottomrule
+\end{tabular}}
+\end{table}

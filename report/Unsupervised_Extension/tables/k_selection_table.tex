@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\scriptsize
+\caption{Internal validation of $k$-means partitions of the MOFA factor scores (primary harmonization).}
+\label{tab:ue-k}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rrrrrrlrrr}
+\toprule
+$k$ & Silh. & ARI (vs full) & ARI (pairwise) & PAC & Min.\ prop. & Sizes & $V_{\text{batch}}$ & $V_{\text{LVI}}$ & Score \\
+\midrule
+2 & 0.223 & 0.52 $\pm$ 0.48 & 0.39 & 0.58 & 0.23 & 312/\allowbreak 91 & 0.30 & 0.07 & 0.19 \\
+\textbf{3} & 0.226 & 0.74 $\pm$ 0.23 & 0.59 & 0.50 & 0.16 & 64/\allowbreak 79/\allowbreak 260 & 0.30 & 0.09 & 0.67 \\
+4 & 0.224 & 0.67 $\pm$ 0.19 & 0.58 & 0.53 & 0.09 & 37/\allowbreak 230/\allowbreak 78/\allowbreak 58 & 0.47 & 0.57 & -- \\
+5 & 0.235 & 0.73 $\pm$ 0.21 & 0.60 & 0.46 & 0.01 & 3/\allowbreak 225/\allowbreak 80/\allowbreak 58/\allowbreak 37 & 0.48 & 0.57 & -- \\
+6 & 0.229 & 0.70 $\pm$ 0.14 & 0.61 & 0.40 & 0.01 & 206/\allowbreak 46/\allowbreak 3/\allowbreak 70/\allowbreak 33/\allowbreak 45 & 0.53 & 0.58 & -- \\
+7 & 0.239 & 0.67 $\pm$ 0.16 & 0.61 & 0.37 & 0.01 & 39/\allowbreak 36/\allowbreak 34/\allowbreak 33/\allowbreak 61/\allowbreak 196/\allowbreak 4 & 0.55 & 0.58 & -- \\
+8 & 0.219 & 0.62 $\pm$ 0.11 & 0.59 & 0.32 & 0.01 & 34/\allowbreak 62/\allowbreak 40/\allowbreak 135/\allowbreak 66/\allowbreak 3/\allowbreak 35/\allowbreak 28 & 0.66 & 0.60 & -- \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\parbox{0.95\linewidth}{\footnotesize ARI: mean $\pm$ SD over 200 subsamples of 80\%; PAC: proportion of consensus indices in (0.1, 0.9); Score: composite rank criterion (partitions with a cluster $<$10\% excluded). Bold: selected $k$.}
+\end{table}

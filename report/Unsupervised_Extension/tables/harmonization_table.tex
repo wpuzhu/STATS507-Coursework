@@ -1,0 +1,32 @@
+\begin{table}[htbp]
+\centering
+\scriptsize
+\caption{Harmonization diagnostics against acquisition batch.}
+\label{tab:ue-harm}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llrrrrrrr}
+\toprule
+Strategy & Seq. & Loc.\ sig.\ (\%) & Scale sig.\ (\%) & $R^2_{\text{batch}}$ & Silh. & RF AUC & LVI feat.\ (\%) & LVI AUC \\
+\midrule
+No correction & T1 & 91 & 94 & 0.361 & 0.27 & 0.88 & 59 & 0.85 \\
+ & T2 & 97 & 91 & 0.320 & 0.21 & 0.88 & 2 & 0.76 \\
+ & ADC & 95 & 82 & 0.373 & 0.23 & 0.89 & 2 & 0.81 \\
+ComBat (center) & T1 & 79 & 81 & 0.162 & 0.20 & 1.00 & 66 & 0.80 \\
+ & T2 & 85 & 73 & 0.130 & 0.15 & 1.00 & 10 & 0.68 \\
+ & ADC & 83 & 72 & 0.151 & 0.17 & 1.00 & 8 & 0.76 \\
+ComBat (batch) & T1 & 10 & 32 & 0.000 & -0.04 & 1.00 & 56 & 0.72 \\
+ & T2 & 5 & 25 & 0.000 & -0.04 & 1.00 & 54 & 0.62 \\
+ & ADC & 11 & 31 & 0.000 & -0.04 & 1.00 & 56 & 0.68 \\
+ComBat (batch, LVI protected) & T1 & 9 & 52 & 0.006 & -0.03 & 1.00 & 51 & 0.88 \\
+ & T2 & 2 & 45 & 0.004 & -0.03 & 1.00 & 50 & 0.88 \\
+ & ADC & 3 & 53 & 0.005 & -0.04 & 1.00 & 56 & 0.81 \\
+Rank-INT (batch) & T1 & 0 & 0 & 0.000 & -0.04 & 0.98 & 58 & 0.73 \\
+ & T2 & 0 & 0 & 0.000 & -0.05 & 0.98 & 57 & 0.59 \\
+ & ADC & 0 & 0 & 0.000 & -0.05 & 0.96 & 57 & 0.67 \\
+CovBat (batch) & T1 & 9 & 63 & 0.000 & -0.05 & 0.99 & 50 & 0.74 \\
+ & T2 & 4 & 85 & 0.000 & -0.05 & 0.99 & 49 & 0.62 \\
+ & ADC & 12 & 86 & 0.000 & -0.05 & 1.00 & 53 & 0.70 \\
+\bottomrule
+\end{tabular}}
+\par\smallskip\parbox{0.95\linewidth}{\footnotesize Loc./Scale sig.: \% of features with Kruskal--Wallis / Brown--Forsythe $q<0.05$ for batch; $R^2_{\text{batch}}$: PERMANOVA; Silh.: silhouette of batch labels in 10 PCs; RF AUC: 5-fold CV random-forest AUC predicting batch; LVI feat.: \% of features with LVI $q<0.05$; LVI AUC: CV logistic AUC.}
+\end{table}
